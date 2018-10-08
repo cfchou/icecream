@@ -1,6 +1,6 @@
 PACKAGE := ./cmd/... ./pkg/...
 
-.DEFAULT_GOAL := format-and-test
+.DEFAULT_GOAL := test
 
 .PHONY: test
 test: format
