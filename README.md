@@ -50,7 +50,7 @@ The http-related source code sits in the __cmd/apiserver__. This service can be 
 I try to make data access layer and models reusable and extensible. As the result, it is implemented as a backend in __pkg/backend__. I have done one for mongoDB. But it's possible to write others for redis, RDBMS, and even cloud storages.
 
 
-##### API Design
+### API
 
 For authentication/authorization, __Authorization: $YOUR_API_KEYS__ has to be in the HTTP header. This design is common and efficient, but it has to go with SSL to be secure. There are two API keys preloaded in the db for test:
 
@@ -61,11 +61,12 @@ Looking into the sample data, I assume each icecream product is uniquely identif
 
 The goal is to support CRUD for products. I'll enumerate the APIs  here:
 
-- Create:
-    * POST /products/
-       This is an __exclusive create__. It fails if there's already a s product in the db with the same productId.
-       ```
-       cat <<HERE | curl -i -XPOST --header "Authorization: testkey" localhost:8080/products/ -d @-
+##### Create:
+* POST /products/
+    
+This is an __exclusive create__. It fails if there's already a s product in the db with the same productId.
+```
+cat <<HERE | curl -i -XPOST --header "Authorization: testkey" localhost:8080/products/ -d @-
 {
     "allergy_info": "",
     "description": "",
@@ -79,12 +80,13 @@ The goal is to support CRUD for products. I'll enumerate the APIs  here:
     "story": ""
 }
 HERE
-       ```
+```
 
-    * PUT /products/{productID}
-       This is an __upsert__. It creates the product if not existed, otherwise it replaces what's in the db.
-       ```
-       cat <<HERE | curl -i -XPUT --header "Authorization: testkey" localhost:8080/products/001 -d @-
+* PUT /products/{productID}
+    
+This is an __upsert__. It creates the product if not existed, otherwise it replaces what's in the db.
+```
+cat <<HERE | curl -i -XPUT --header "Authorization: testkey" localhost:8080/products/001 -d @-
 {
     "allergy_info": "",
     "description": "updattttttttttte",
@@ -98,49 +100,55 @@ HERE
     "story": ""
 }
 HERE
-       ```
+```
 
-    * Payload for APIs above are expected to be __all fields__ of a product in json.
+* Payload for APIs above are expected to be __all fields__ of a product in json.
 
 
-- Update:
-    * PUT /products/{productID}
-       Fully update. It is the same as the one for Create.
+##### Update:
+* PUT /products/{productID}
 
-    * PATCH /products/{productID}
-       Partial update.
-       ```
-        cat <<HERE | curl -i -XPATCH --header  "Authorization: testkey" localhost:8080/products/001 -d @-
+Fully update. It is the same as the one for Create.
+
+
+* PATCH /products/{productID}
+
+Partial update.
+```
+cat <<HERE | curl -i -XPATCH --header  "Authorization: testkey" localhost:8080/products/001 -d @-
 {
     "description": "extra information",
     "ingredients": ["soy", "milk"]
 }
 HERE
-       ```
+```
 
 
-- Read:
-    * GET /products/{productID}
-        Read a product.
-        ```
-        curl -i -XGET --header "Authorization: testkey" localhost:8080/products/2188
-        ```
+##### Read:
+* GET /products/{productID}
 
-    * Get /products/\[?__cursor=$cursor__&__limit=$limit__\]
-        Read products(support pagination). __$cursor__ is the end of last page, __$limit__ is the max number of products per page. $limit is capped by _limitToRead_ in _icecream.yaml_. It returns products and the next __$cursor__.
-        ```
-        curl -i -XGET --header "Authorization: testkey" localhost:8080/products/
-        curl -i -XGET --header "Authorization: testkey" localhost:8080/products/\?limit=2
-        curl -i -XGET --header "Authorization: testkey" localhost:8080/products/\?limit=2\&cursor=5bbaeea1246ed82dc66b2603
-        ```
+Read a product.
+```
+curl -i -XGET --header "Authorization: testkey" localhost:8080/products/2188
+```
+
+* Get /products/\[?__cursor=$cursor__&__limit=$limit__\]
+
+Read products(support pagination). __$cursor__ is the end of last page, __$limit__ is the max number of products per page. $limit is capped by _limitToRead_ in _icecream.yaml_. It returns products and the next __$cursor__.
+```
+curl -i -XGET --header "Authorization: testkey" localhost:8080/products/
+curl -i -XGET --header "Authorization: testkey" localhost:8080/products/\?limit=2
+curl -i -XGET --header "Authorization: testkey" localhost:8080/products/\?limit=2\&cursor=5bbaeea1246ed82dc66b2603
+```
 
 
-- Delete:
-    1. DELETE /products/{productID}
-        Delete a product.
-        ```
-        curl -i -XDELETE --header "Authorization: testkey" localhost:8080/products/001
-        ```
+##### Delete:
+* DELETE /products/{productID}
+
+Delete a product.
+```
+curl -i -XDELETE --header "Authorization: testkey" localhost:8080/products/001
+```
 
 
 ### TODO
