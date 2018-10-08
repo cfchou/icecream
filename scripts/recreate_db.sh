@@ -2,10 +2,9 @@
 
 CONTAINER=my_mongo
 
-# Location where data of mongoDB persist
-ICECREAM_JSON=/Users/cfchou/Project/gopath/src/bitbucket.org/cfchou/icecream/icecream.json
-APIKEY_JSON=/Users/cfchou/Project/gopath/src/bitbucket.org/cfchou/icecream/apikey.json
-#
+# data preload to mongoDB
+ICECREAM_JSON=icecream.json
+APIKEY_JSON=apikey.json
 DB=icecream
 
 # aliases
@@ -15,19 +14,16 @@ mongod="docker run --name $CONTAINER \
 mongod_stop="docker stop $CONTAINER"
 mongo_import="docker exec -i my_mongo mongoimport --db $DB --drop --collection "
 
-## icecream.json is a json array, reformat it to a stream of json objects.
-#jq="docker run -i --rm stedolan/jq '.[]'"
-
 
 #
 echo "(Re)Start monogoDB......"
-$mongod_stop || echo ""
+$mongod_stop 2>/dev/null || echo ""
 $mongod
 
 echo "Reload data from $ICECREAM_JSON......"
-cat $ICECREAM_JSON | $(echo "$mongo_import product")
+cat $ICECREAM_JSON | $(echo "$mongo_import products")
 echo "Reload data from $APIKEY_JSON......"
-cat $APIKEY_JSON | $(echo "$mongo_import apikey")
+cat $APIKEY_JSON | $(echo "$mongo_import apikeys")
 
 
 

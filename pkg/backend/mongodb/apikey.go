@@ -7,18 +7,22 @@ import (
 	pe "github.com/pkg/errors"
 )
 
+const apiKeysCollection = "apikeys"
+
 type mAPIKey struct {
 	ID bson.ObjectId `bson:"_id,omitempty" json:"_id,omitempty"`
 	// ApiKey is mandatory.
-	APIKey      string `json:"apikey"`
+	APIKey string `json:"apikey"`
 }
 
+// MongoAPIKeyBackend stores a mongoDB session for retrieving APIKey.
 type MongoAPIKeyBackend struct {
 	session *mgo.Session
 }
 
+// Authenticate checks if apiKey is stored in the db.
 func (h *MongoAPIKeyBackend) Authenticate(apiKey string) error {
-	q := h.session.DB("").C("apikey").Find(
+	q := h.session.DB("").C(apiKeysCollection).Find(
 		&bson.M{"apikey": apiKey})
 
 	var keys []mAPIKey
@@ -36,4 +40,11 @@ func (h *MongoAPIKeyBackend) Authenticate(apiKey string) error {
 	}
 	log.Debug(fmt.Sprintf("Find _id=%s", keys[0].ID.Hex()))
 	return nil
+}
+
+// CreateMongoAPIKeyBackend creates MongoAPIKeyBackend
+func CreateMongoAPIKeyBackend(session *mgo.Session) (*MongoAPIKeyBackend, error) {
+	return &MongoAPIKeyBackend{
+		session,
+	}, nil
 }

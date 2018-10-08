@@ -17,7 +17,7 @@ lint: format
 
 .PHONY: apiserver
 apiserver: format
-	go build -o apiserver bitbucket.org/cfchou/icecream/cmd/apiserver
+	go build -o apiserver github.com/cfchou/icecream/cmd/apiserver
 
 .PHONY: db
 db:

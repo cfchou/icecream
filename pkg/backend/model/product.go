@@ -2,10 +2,9 @@ package model
 
 // Product is everything about an ice cream product.
 type Product struct {
-	// ProductId is mandatory.
+	// ProductId is mandatory and acts as the primary key.
 	ProductID string `json:"productId"`
-	// Name is mandatory.
-	Name string `json:"name"`
+	Name      string `json:"name"`
 
 	ImageClosed           string   `json:"image_closed"`
 	ImageOpen             string   `json:"image_open"`
@@ -17,12 +16,11 @@ type Product struct {
 	DietaryCertifications string   `json:"dietary_certifications"`
 }
 
-// Products support pagination when reading a large chunk of Products.
+// Products is a page of Products.
 type Products struct {
-	// When Cursor is presented, client can use it as the start to query the
-	// next page.
+	// When Cursor is presented, it marks the last row of this page and could
+	// be used to query the next page.
 	Cursor string `json:"cursor,omitempty"`
 
 	Products []Product `json:"products"`
 }
-

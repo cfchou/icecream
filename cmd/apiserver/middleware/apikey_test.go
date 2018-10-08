@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"bitbucket.org/cfchou/icecream/cmd/apiserver/mocks"
 	"fmt"
+	"github.com/cfchou/icecream/cmd/apiserver/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"io/ioutil"

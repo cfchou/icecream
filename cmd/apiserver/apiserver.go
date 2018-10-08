@@ -1,13 +1,16 @@
 package main
 
 import (
-	"bitbucket.org/cfchou/icecream/cmd/apiserver/handler"
-	"bitbucket.org/cfchou/icecream/cmd/apiserver/util"
-	"bitbucket.org/cfchou/icecream/pkg/backend/mongodb"
 	"bytes"
 	"fmt"
+	"github.com/cfchou/icecream/cmd/apiserver/handler"
+	"github.com/cfchou/icecream/cmd/apiserver/middleware"
+	"github.com/cfchou/icecream/cmd/apiserver/util"
+	"github.com/cfchou/icecream/pkg/backend/mongodb"
+	"github.com/globalsign/mgo"
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/julienschmidt/httprouter"
+	"github.com/justinas/alice"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -15,8 +18,7 @@ import (
 	"os"
 )
 
-const appName string = "cmd.apiserver"
-const apiVersion string = "v1"
+const appName string = "apiserver"
 
 var (
 	log           = log15.New("module", appName)
@@ -24,6 +26,7 @@ var (
 server:
   host: 127.0.0.1
   port: 8080
+  limitToRead: 10
 db:
   database: icecream
   host: 127.0.0.1
@@ -65,29 +68,51 @@ func main() {
 	defer log.Info(fmt.Sprintf("%s stops", appName))
 	log.Info(fmt.Sprintf("%s starts", appName))
 
+	serverConf := viper.Sub("server")
 	dbConf := viper.Sub("db")
-	url := util.CreateMongoUrl(dbConf, appName)
-	backend, err := mongodb.CreateMongoBackend(url)
 
+	url := util.CreateMongoURL(dbConf, appName)
+	session, err := mgo.Dial(url)
 	if err != nil {
-		log.Error("CreateMongoBackend failed", "err", err.Error())
+		log.Error("mgo.Dial failed", "err", err.Error())
 		return
 	}
-	defer backend.Close()
+	defer session.Close()
 
-	ph := handler.CreateProductHandler(backend, backend)
-	mux := httprouter.New()
-	mux.GET("/products/:productID", httprouter.Handle(ph.HandleGet))
-	mux.GET("/products", httprouter.Handle(ph.HandleGet))
-	mux.POST("/products", httprouter.Handle(ph.HandlePost))
-	mux.PUT("/products/:productID", httprouter.Handle(ph.HandlePut))
-	mux.DELETE("/products/:productID", httprouter.Handle(ph.HandleDelete))
+	productBackend, _ := mongodb.CreateMongoProductBackend(session)
+	apiKeyBackend, _ := mongodb.CreateMongoAPIKeyBackend(session)
 
-	serverConf := viper.Sub("server")
+	ph := handler.CreateProductHandler(productBackend,
+		serverConf.GetInt("limitToRead"))
+
+	am := middleware.CreateAPIKeyMiddleWare(apiKeyBackend)
+	r := mux.NewRouter()
+
+	// Read
+	r.Methods("GET").Path("/products/{productID}").HandlerFunc(ph.HandleGet)
+	// Read many, with optional parameters "cursor" and "limit"
+	r.Methods("GET").Path("/products/").HandlerFunc(ph.HandleGetMany)
+
+	// Create exclusively without productID in URI. However, the productID must be
+	// contained in the payload and must not exsited in the DB.
+	r.Methods("POST").Path("/products/").HandlerFunc(ph.HandlePost)
+
+	// Create or replace(fully update).
+	r.Methods("PUT").Path("/products/{productID}").HandlerFunc(ph.HandlePut)
+
+	// Partial update
+	r.Methods("PATCH").Path("/products/{productID}").HandlerFunc(ph.HandlePatch)
+
+	// Delete
+	r.Methods("DELETE").Path("/products/{productID}").HandlerFunc(ph.HandleDelete)
+
+	// Chain middlewares and handler
+	stack := alice.New(am.Handle).Then(r)
+
 	server := http.Server{
-		Addr:    fmt.Sprintf("%s:%d", serverConf.GetString("host"),
+		Addr: fmt.Sprintf("%s:%d", serverConf.GetString("host"),
 			serverConf.GetInt("port")),
-		Handler: mux,
+		Handler: stack,
 	}
 
 	cert := serverConf.GetString("cert")
@@ -98,12 +123,4 @@ func main() {
 		log.Warn("Running without SSL")
 		server.ListenAndServe()
 	}
-}
-
-func hello(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	fmt.Fprintf(w, "hello, %s!\n", p.ByName("name"))
-}
-
-func withAPIKey(fn http.HandlerFunc) http.HandlerFunc {
-	return fn
 }

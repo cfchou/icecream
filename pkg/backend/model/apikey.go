@@ -1,10 +1,6 @@
 package model
 
-import "time"
-
-type ApiKey struct {
-	ClientID string
-	Expiry time.Time
-	Key string
-	Revoked bool
+// APIKey represent API key
+type APIKey struct {
+	APIKey string `json:"apikey"`
 }

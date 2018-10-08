@@ -1,29 +1,48 @@
-package handler
+package middleware
 
-import "bitbucket.org/cfchou/icecream/pkg/backend/model"
+import (
+	"github.com/inconshreveable/log15"
+	"net/http"
+)
 
 type APIKeyBackend interface {
 	Authenticate(apiKey string) error
 }
 
-type ProductBackend interface {
-	// Create exclusively(must not existed)
-	Create(product *model.Product) error
+type APIKeyMiddleWare struct {
+	log     log15.Logger
+	backend APIKeyBackend
+}
 
-	Read(productID string) (*model.Product, error)
-	// Don't provide ReadAll() because in real world there should be always a
-	// limit for the amount to read.
-	ReadMany(cursor string, limit int) (*model.Products, error)
+func (m *APIKeyMiddleWare) Handle(h http.Handler) http.Handler {
+	f := func(w http.ResponseWriter, r *http.Request) {
+		// Authorization: xxxxxxxxxx
+		authorization, ok := r.Header["Authorization"]
+		if !ok || len(authorization) != 1 {
+			m.log.Warn("No or invalid Authorization header")
+			w.WriteHeader(401)
+			w.Write([]byte("No or invalid Authorization header"))
+			return
+		}
+		apiKey := authorization[0]
+		if apiKey == "" {
+			m.log.Warn("No API Key provided")
+			w.WriteHeader(401)
+			return
+		}
+		if err := m.backend.Authenticate(apiKey); err != nil {
+			m.log.Warn("Invalid API Key")
+			w.WriteHeader(401)
+			return
+		}
+		h.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(f)
+}
 
-	//Update existing
-	Update(product *model.Product) error
-
-	// TODO: partial update
-	//UpdatePartial(productID string, kvs map[string]interface{}) error
-
-	// Create or replace(fully update)
-	Upsert(product *model.Product) error
-
-	// Delete
-	Delete(productID string) error
+func CreateAPIKeyMiddleWare(backend APIKeyBackend) *APIKeyMiddleWare {
+	return &APIKeyMiddleWare{
+		log:     log15.New("module", "middleware.apikey"),
+		backend: backend,
+	}
 }

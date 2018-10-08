@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"bitbucket.org/cfchou/icecream/cmd/apiserver/mocks"
-	"bitbucket.org/cfchou/icecream/pkg/backend/model"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/cfchou/icecream/cmd/apiserver/mocks"
+	"github.com/cfchou/icecream/pkg/backend/model"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -60,8 +60,8 @@ func TestProductHandler_HandleGetMany(t *testing.T) {
 
 	products := &model.Products{
 		Products: []model.Product{
-			model.Product{ProductID: "001"},
-			model.Product{ProductID: "002"},
+			{ProductID: "001"},
+			{ProductID: "002"},
 		},
 	}
 
@@ -206,4 +206,47 @@ func TestProductHandler_HandleDelete_403CausedByBackend(t *testing.T) {
 	request, _ := http.NewRequest("DELETE", "/products/"+productID, nil)
 	r.ServeHTTP(writer, request)
 	assert.Equal(t, 403, writer.Code)
+}
+
+func TestCreateProductHandler(t *testing.T) {
+	//y := []byte(`{"description":"","ingredients":["abc"],"productId":"001","sourcing_values":[]}`)
+	x := map[string]interface{}{
+		"productId":       "001",
+		"description":     "whatever",
+		"ingredients":     []string{"abc"},
+		"sourcing_values": []string{},
+		"cool":            123,
+	}
+	z := []byte(`{
+    "allergy_info": "",
+    "description": "",
+    "dietary_certifications": "",
+    "image_closed": "",
+    "image_open": "",
+    "ingredients": [],
+    "name": "Test2",
+    "productId": "001",
+    "sourcing_values": [],
+    "story": ""
+}
+`)
+	bs, err := json.Marshal(x)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	bsstr := string(bs)
+	t.Log(bsstr)
+	var p model.Product
+	if err := json.Unmarshal(bs, &p); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	t.Log("done")
+	var q model.Product
+	if err := json.Unmarshal(z, &q); err != nil {
+		t.Error(err.Error())
+		return
+	}
+	t.Log("done")
 }
