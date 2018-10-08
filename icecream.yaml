@@ -1,0 +1,11 @@
+server:
+  host: 127.0.0.1
+  port: 8080
+  #cert: localhost.cert.pem
+  #key: localhost.key.pem
+  limitToRead: 10
+db:
+  database: icecream
+  host: 127.0.0.1
+  port: 27017
+
