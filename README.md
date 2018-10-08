@@ -1,19 +1,19 @@
 
 ### Requirement:
-- go: My development is done on go 1.11. However, any version goes beyond 1.8 should work.
+- go: My development is done on go 1.11. However, any version beyond 1.8 should work.
 - docker: For running the database.
 - make 
-- curl: It is needed if you want to run the demo scripts.
+- curl: It is needed if you want to run the examples.
 
 ### Installation
-
-The project is distributed as a _icecream.tar.gz_, which contains source code and testing data.
 
 - Make sure go and __$GOPATH__ are set up properly and docker is running.
 - Run these commands:
     ```
-    go get github.com/cfchou/icecream
-    cd $GOPATH/src/github.com/cfchou/icecream
+    mkdir -p $GOPATH/src/github.com/cfchou
+    cd $GOPATH/src/github.com/cfchou
+    git clone https://github.com/cfchou/icecream.git
+    cd icecream
     make db
     make test
     make run
@@ -35,38 +35,35 @@ For finer control, a _Makefile_ is provided:
 ### Design
 
 ##### Database: 
-As to database, I considered about SQL databases(RDBMS) and nosql ones. I think that in production, the choice would heavily depend on what kind of operation we expect to fulfill, for example, the load between reads and writes.  
+As to database, I considered SQL databases(RDBMS) and nosql ones. I think that in production, the choice would heavily depend on what kind of business and operational requirement we expect to fulfill, for example, SLA and the loading between reads and writes.  
 
-For the sake of simplicity, I choose mongoDB, a schemaless document-oriented database.  There are a few immediate advantages. Firstly, the sample dataset enclosed in this project is in JSON format, so it's a no-brainer to load the data into the db. Secondly, I decide to manipulate a document in a whole rather than break it to records in different tables with foreign keys pointing to each other. RDBMS has the merit of maintaining strong consistency of data and detecting any violation for us. However, for CRUD only one type of document, it seems to me a bit overkill.
+For simplicity, I choose mongoDB, a schemaless document-oriented database. There are a few immediate advantages. Firstly, the sample dataset enclosed in this project is in JSON format, so it's a no-brainer to load the data into the db. Secondly, I decide to manipulate a document in a whole rather than break it down to records in different tables with foreign keys pointing to each other. RDBMS has the merit of maintaining strong consistency of data and detecting violations for us. However, for only CRUD one type of document, it seems to me a bit overkill.
 
-There are a few caveats of using mongoDB for this project, the biggest problem for me is the lack of SQL to manipulate the data. Also constraints like uniqueness of fields have to be done by issuing specific mongoDB commands.  
+Nevertheless, there are a few caveats of using mongoDB for this project, the biggest problem for me is the lack of SQL to manipulate the data. Also constraints like uniqueness of fields have to be done by issuing specific mongoDB commands.  
 
 
 ##### Server Design
-I don't make use of a web framework as it is a simple RESTful server. Having said that, I do rely on some 3rd-party libraries to build the project. Just to name a few, [spf13/viper](https://github.com/spf13/viper) for configuration, [gorilla/mux](http://www.gorillatoolkit.org/pkg/mux) for URL routing, [inconshreveable/log15](https://github.com/inconshreveable/log15) for contextual logging, and [stretchr/testify](https://github.com/stretchr/testify) for testing and mocking.
+I don't make use of a web framework as it is a simple RESTful server. Having said that, I do rely on some 3rd-party libraries to build this project. Just to name a few, [spf13/viper](https://github.com/spf13/viper) for configuration, [gorilla/mux](http://www.gorillatoolkit.org/pkg/mux) for URL routing, [inconshreveable/log15](https://github.com/inconshreveable/log15) for contextual logging, and [stretchr/testify](https://github.com/stretchr/testify) for testing and mocking.
 
 The http-related source code sits in the __cmd/apiserver__. This service can be extended by adding __middleware__ to support less business related operations like auditing, metrics, etc.. At the moment, there's only one and it's for API key authentication. The real CRUD logic is implemented in __handler__ which connects to backend of choice to access the data.
 
-I try to make data access layer and models reusable and extensible. Therefore, it is implemented as a backend in __pkg/backend__. I have implemented one for mongoDB. But it's possible to write others for redis, RDBMS, and cloud storages etc..
-
-
+I try to make data access layer and models reusable and extensible. As the result, it is implemented as a backend in __pkg/backend__. I have done one for mongoDB. But it's possible to write others for redis, RDBMS, and even cloud storages.
 
 
 ##### API Design
 
-For authentication/authorization, __Authorization: $YOUR_API_KEYS__ has be in the header. This design is common and efficient, but it has to go with SSL to ensure security. There are two API keys preloaded in the db for test:
+For authentication/authorization, __Authorization: $YOUR_API_KEYS__ has to be in the HTTP header. This design is common and efficient, but it has to go with SSL to be secure. There are two API keys preloaded in the db for test:
 
 - "testkey"
 - "0123456789"
 
 Looking into the sample data, I assume each icecream product is uniquely identified by the field __productId__.
 
-The goal is to support CRUD for products. I'll enumerate the APIs and
-corresponding demo script here:
+The goal is to support CRUD for products. I'll enumerate the APIs  here:
 
 - Create:
     * POST /products/
-       This is an __exclusive create__. It fails if there'a s product in the db with the same productId.
+       This is an __exclusive create__. It fails if there's already a s product in the db with the same productId.
        ```
        cat <<HERE | curl -i -XPOST --header "Authorization: testkey" localhost:8080/products/ -d @-
 {
