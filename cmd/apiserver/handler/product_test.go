@@ -174,6 +174,45 @@ func TestProductHandler_HandlePut_403CausedByBackend(t *testing.T) {
 	assert.Equal(t, 403, writer.Code)
 }
 
+func TestProductHandler_HandlePatch(t *testing.T) {
+	mB := &mocks.ProductBackend{}
+
+	productID := "001"
+	product := &model.Product{ProductID: productID}
+
+	mB.On("UpdatePartial", productID, mock.Anything).Return(nil)
+	ph := CreateProductHandler(mB, 10)
+
+	r := mux.NewRouter()
+	r.Methods("PATCH").Path("/products/{productID}").HandlerFunc(ph.HandlePatch)
+
+	writer := httptest.NewRecorder()
+	bs, _ := json.Marshal(product)
+	request, _ := http.NewRequest("PATCH", "/products/"+productID, bytes.NewBuffer(bs))
+	r.ServeHTTP(writer, request)
+	assert.Equal(t, 200, writer.Code)
+}
+
+func TestProductHandler_HandlePatch_403CausedByBackend(t *testing.T) {
+	mB := &mocks.ProductBackend{}
+
+	productID := "001"
+	product := &model.Product{ProductID: productID}
+
+	mB.On("UpdatePartial", productID, mock.Anything).
+		Return(fmt.Errorf("any error"))
+	ph := CreateProductHandler(mB, 10)
+
+	r := mux.NewRouter()
+	r.Methods("PATCH").Path("/products/{productID}").HandlerFunc(ph.HandlePatch)
+
+	writer := httptest.NewRecorder()
+	bs, _ := json.Marshal(product)
+	request, _ := http.NewRequest("PATCH", "/products/"+productID, bytes.NewBuffer(bs))
+	r.ServeHTTP(writer, request)
+	assert.Equal(t, 403, writer.Code)
+}
+
 func TestProductHandler_HandleDelete(t *testing.T) {
 	mB := &mocks.ProductBackend{}
 
@@ -206,47 +245,4 @@ func TestProductHandler_HandleDelete_403CausedByBackend(t *testing.T) {
 	request, _ := http.NewRequest("DELETE", "/products/"+productID, nil)
 	r.ServeHTTP(writer, request)
 	assert.Equal(t, 403, writer.Code)
-}
-
-func TestCreateProductHandler(t *testing.T) {
-	//y := []byte(`{"description":"","ingredients":["abc"],"productId":"001","sourcing_values":[]}`)
-	x := map[string]interface{}{
-		"productId":       "001",
-		"description":     "whatever",
-		"ingredients":     []string{"abc"},
-		"sourcing_values": []string{},
-		"cool":            123,
-	}
-	z := []byte(`{
-    "allergy_info": "",
-    "description": "",
-    "dietary_certifications": "",
-    "image_closed": "",
-    "image_open": "",
-    "ingredients": [],
-    "name": "Test2",
-    "productId": "001",
-    "sourcing_values": [],
-    "story": ""
-}
-`)
-	bs, err := json.Marshal(x)
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	bsstr := string(bs)
-	t.Log(bsstr)
-	var p model.Product
-	if err := json.Unmarshal(bs, &p); err != nil {
-		t.Error(err.Error())
-		return
-	}
-	t.Log("done")
-	var q model.Product
-	if err := json.Unmarshal(z, &q); err != nil {
-		t.Error(err.Error())
-		return
-	}
-	t.Log("done")
 }
