@@ -57,10 +57,12 @@ For authentication/authorization, __Authorization: $YOUR_API_KEYS__ has to be in
 - "0123456789"
 
 
+##### API list
 Looking into the sample data, I assume each icecream product is uniquely identified by the field __productId__.
-The goal is to support CRUD for products. I'll enumerate the APIs  here:
+The goal is to support CRUD for products. APIs are listed below:
 
-##### Create:
+
+###### Create:
 * POST /products/
     
 This is an __exclusive create__. It fails if there's already a s product in the db with the same productId.
@@ -104,7 +106,7 @@ HERE
 * Payload for APIs above are expected to be __all fields__ of a product in json.
 
 
-##### Update:
+###### Update:
 * PUT /products/{productID}
 
 Fully update. It is the same as the one for Create.
@@ -123,7 +125,7 @@ HERE
 ```
 
 
-##### Read:
+###### Read:
 * GET /products/{productID}
 
 Read a product.
@@ -141,7 +143,7 @@ curl -i -XGET --header "Authorization: testkey" localhost:8080/products/\?limit=
 ```
 
 
-##### Delete:
+###### Delete:
 * DELETE /products/{productID}
 
 Delete a product.
