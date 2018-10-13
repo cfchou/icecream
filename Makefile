@@ -3,11 +3,11 @@ PACKAGE := ./cmd/... ./pkg/...
 .DEFAULT_GOAL := test
 
 .PHONY: test
-test: format
+test:
 	go test -v -race $(PACKAGE)
 
 .PHONY: format
-format:
+format: test
 	go fmt $(PACKAGE)
 	go vet $(PACKAGE)
 
@@ -16,7 +16,7 @@ lint: format
 	golint $(PACKAGE)
 
 .PHONY: apiserver
-apiserver: format
+apiserver: test
 	go build -o apiserver github.com/cfchou/icecream/cmd/apiserver
 
 .PHONY: db
