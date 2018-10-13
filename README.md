@@ -1,5 +1,6 @@
 ### Icecream
 [![GoDoc](https://godoc.org/github.com/cfchou/icecream?status.svg)](https://godoc.org/github.com/cfchou/icecream)
+[![Build Status](https://travis-ci.org/cfchou/icecream.png?branch=master)](https://travis-ci.org/cfchou/icecream)
 
 An API server.
 
