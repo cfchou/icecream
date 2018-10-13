@@ -1,3 +1,7 @@
+### Icecream
+[![GoDoc](https://godoc.org/github.com/cfchou/icecream?status.svg)](https://godoc.org/github.com/cfchou/icecream)
+
+An API server.
 
 ### Requirement:
 - go: My development is done on go 1.11. However, any version beyond 1.8 should work.
@@ -154,5 +158,6 @@ curl -i -XDELETE --header "Authorization: testkey" localhost:8080/products/001
 ### TODO
 - Higher test coverage
 - Improve error handling
+- GraphQL
 
 
